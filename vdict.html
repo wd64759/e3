@@ -9,7 +9,30 @@
 <body>
 
   <script type="text/javascript">
-    // d3.select("body").append("p").text("New paragraph ssss!");
+
+    textLoader = function() {
+      d3.select("body").append("p").text("New paragraph ssss!");
+    }
+
+    dataLoader = function() {
+      // d3.json("xx.json", function(error, json)) ..
+      d3.csv("data/food.csv", function(error, data){
+        if (error) {
+          console.log('exception - ' + error);
+        } else {
+          console.log(data)
+        }
+      });
+    }
+
+    dataArrayLoader = function() {
+      var dataset = [5, 10, 15, 20, 25];
+
+      d3.select("body").selectAll("p").data(dataset)
+      .enter().append("p").text("new paragraph!");
+    }
+
+    dataArrayLoader();
 
   </script>
 </body>

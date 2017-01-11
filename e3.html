@@ -1,71 +1,100 @@
+
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-    <title>vdict</title>
-    <link href="/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/hack.css">
-    <style type="text/css">
-    </style>
-  </head>
+<meta charset="utf-8">
+<style>
+    @font-face {
+        font-family: 'Roboto Condensed';
+        src: url('../fonts/RobotoCondensed-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+    }
+    .link {
+        stroke: #999;
+        stroke-opacity: 0.6;
+    }
 
-<body class="ember-application">
-<div id="ember215" class="ember-view">
-        <div id="ember225" class="ember-view">
-        <div style="position: absolute; top: 0; left: 5px;">
-          <div class="form">
-            <div class="control-group">
-              <label for="lcfCodes">Object Category</label>
-              <select id="ember241" class="ember-view ember-select">
-              <option value="store procedures">store procedures</option>
-              <option value="tables">tables</option>
-              <option value="views">views</option>
-              <option value="restrictions">restrictions</option>
-              </select>
-            </div>
+    .node {
+        stroke: #fff;
+        stroke-width: 1.5px;
+    }
 
-            <div class="control-group">
-              <div class="control-group" data-bindattr-1="1">
-                <label for="lcfCode">Key Word Search
-                <button class="btn btn-mini btn-primary" style="float:right;">Find</button>
-                <strong style="display:none;clear:both;width: 220px;"></strong>
-                </label>
-                <textarea id="ember790" class="ember-view ember-text-area steppable" rows="5"></textarea>
-              </div>
-            </div>
+    div.tooltip {
+        position: absolute;
+        text-align: center;
+        line-height: 1;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        border-radius: 2px;
+        pointer-events: none;
+        font-family: 'Roboto Condensed', sans-serif;
+    }
+    div.pinned {
+        color: #e8941a;
+    }
+    g {
+        font-family: 'Roboto Condensed', sans-serif;
+    }
+    g.cell {
+        cursor: pointer;
+    }
+    g.cell:hover {
+        fill-opacity: 0.4;
+    }
+    g.cell.active:hover {
+        fill-opacity: 1;
+    }
+    g.cell text {
+        fill: white;
+        -moz-user-select: none;
+       -khtml-user-select: none;
+       -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    g.cell.active text{
+        fill: #e8941a;
+    }
+    .legendSize circle {
+/*        stroke: white;*/
+        fill: #999;
+        fill-opacity: 0.6;
+    }
+    .legendContainer > text {
+        font-size: 30px;
+    }
+    .legendContainer > text:nth-child(2) {
+        font-size: 20px;
+    }
+    .legendContainer {
+        padding: 0;
+    }
 
-            <div class="control-group">
-              <label for="animationSpeed">Construction Speed</label>
-              <select id="ember816" class="ember-view ember-select">
-                <option id="ember872" class="ember-view" value="100">Slow</option>
-              </select>
-            </div>
+    .activeNode {
+        cursor: pointer;
+    }
+    .baseNode {
+        stroke: #e8941a;
+        stroke-width: 3px;
+    }
+    body {
+        margin:0;
+    }
+    polygon {
+        fill: black;
+/*        fill: #1e252b;*/
+    }
+    svg {
+        fill: white;
+    }
 
-            <div class="control-group">
-              <button class="btn btn-block btn-primary" data-ember-action="4">
-                <i class="icon-repeat icon-white"></i>
-                Reload
-              </button>
-            </div>
-          </div>
-        </div>
 
-    </div>
-
-    <div id="chart">
-    </div>
-    <script src="js/lib/jquery.min.js"></script>
-    <!-- <script src="js/handlebar.js"></script> -->
-    <!-- <script src="js/lib/d3.js" type="text/javascript"></script> -->
-    <!-- <script src="js/lib/d3.v4/d3.js" type="text/javascript"></script> -->
-    <!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
-    <!-- <script type="text/javascript" src="js/jquery.caret.1.02.min.js"></script> -->
-    <!-- <script src="js/vdict.js"></script> -->
+</style>
+<body>
     <script src="//d3js.org/d3.v3.min.js"></script>
     <script src="../js/d3-legend.min.js"></script>
     <script src="https://d3js.org/queue.v1.min.js"></script>
-
-    <script type="text/javascript">
+    <script>
             // Function for moving nodes to front
             d3.selection.prototype.moveToFront = function() {
               return this.each(function(){
@@ -219,7 +248,7 @@
 
 
             //Initialize SVG
-            var graph = d3.select("body div#chart").append("svg")
+            var graph = d3.select("body").append("svg")
               .append("g")
                 .attr("class", "graph")
                 .on("mousedown", function(){
@@ -236,9 +265,9 @@
 
             // Funky shape as background for legend
             var points = "";
-            // var polygon = graph.append("polygon")
-            //                 .attr("opacity", 0.8)
-            //                 .style("pointer-events","all");
+            var polygon = graph.append("polygon")
+                            .attr("opacity", 0.8)
+                            .style("pointer-events","all");
 
             // Rectangle to catch mouse events for zoom
             var rect = graph.append("rect")
@@ -268,36 +297,36 @@
                 .style("opacity", "0");
 
             // Container to hold legend elements
-            // var legendContainer = graph.append("g")
-            //                 .attr("class", "legendContainer");
+            var legendContainer = graph.append("g")
+                            .attr("class", "legendContainer");
 
             // Title of visualization
-            // var vizTitle = legendContainer.append("text")
-            //     .attr("x", xMargin)
-            //     .attr("y", 0)
-            //     .style("fill", "#ffffff")
-            //     .append("tspan")
-            //     .attr("x", xMargin)
-            //     .attr("dy", 0)
-            //     .attr("y", yMargin)
-            //     .text("UNDERGRADUATE")
-            //     .append("tspan")
-            //     .attr("x", xMargin)
-            //     .attr("dy", "30")
-            //     .text("PLAN MOVEMENT");
+            var vizTitle = legendContainer.append("text")
+                .attr("x", xMargin)
+                .attr("y", 0)
+                .style("fill", "#ffffff")
+                .append("tspan")
+                .attr("x", xMargin)
+                .attr("dy", 0)
+                .attr("y", yMargin)
+                .text("UNDERGRADUATE")
+                .append("tspan")
+                .attr("x", xMargin)
+                .attr("dy", "30")
+                .text("PLAN MOVEMENT");
 
             // Instructions for clicking on filter
-            // var instructions = legendContainer.append("text")
-            //     .attr("x", xMargin + 25)
-            //     .attr("y", 400)
-            //     .style("fill", "#e8941a");
-                // .text("CLICK TO FILTER");
+            var instructions = legendContainer.append("text")
+                .attr("x", xMargin + 25)
+                .attr("y", 400)
+                .style("fill", "#e8941a")
+                .text("CLICK TO FILTER");
 
             // Create a legend for entry-level programs
             var entryTranslate = 0;
-            // legendContainer.append("g")
-            //     .attr("class", "legendSize")
-            //     .attr("transform", "translate("+ (xMargin+10) + ", 70)");
+            legendContainer.append("g")
+                .attr("class", "legendSize")
+                .attr("transform", "translate("+ (xMargin+10) + ", 70)");
 
             var legendSize = d3.legend.size()
                 .scale(linearSize)
@@ -307,32 +336,32 @@
                 .cells(2) // Number of objects (circles)
                 .ascending(true);
 
-            // var entryLegend = legendContainer.select(".legendSize")
-            //     .call(legendSize);
+            var entryLegend = legendContainer.select(".legendSize")
+                .call(legendSize);
 
             // Create a legend for Faculties
             var facultyTranslate = 0;
-            // legendContainer.append("g")
-            //     .attr("class", "legendOrdinal")
-            //     .attr("transform", "translate("+ (xMargin+10) + ", 150)");
+            legendContainer.append("g")
+                .attr("class", "legendOrdinal")
+                .attr("transform", "translate("+ (xMargin+10) + ", 150)");
 
-            // var legendOrdinal = d3.legend.color()
-            //     .shape("circle")
-            //     .shapePadding(legendFacultyPadding)
-            //     .scale(color)
-            //     .labels(["Science",
-            //              "Engineering",
-            //              "Health Sciences",
-            //              "Business",
-            //              "Arts and Science",
-            //              "Humanities",
-            //              "Social Sciences",
-            //              "Medicine",
-            //              "Interns and Residents"
-            //             ]);
+            var legendOrdinal = d3.legend.color()
+                .shape("circle")
+                .shapePadding(legendFacultyPadding)
+                .scale(color)
+                .labels(["Science",
+                         "Engineering",
+                         "Health Sciences",
+                         "Business",
+                         "Arts and Science",
+                         "Humanities",
+                         "Social Sciences",
+                         "Medicine",
+                         "Interns and Residents"
+                        ]);
 
-            // var facultyLegend = legendContainer.select(".legendOrdinal")
-            //     .call(legendOrdinal);
+            var facultyLegend = legendContainer.select(".legendOrdinal")
+                .call(legendOrdinal);
 
             // Filtering by faculty or entry-level program
             d3.selectAll("g.cell")
@@ -648,18 +677,17 @@
                 rect.attr("x", minWidthPoly1);
 
                 points ="0,0 " + minWidthPoly1 + ",0 " +minWidthPoly2 + "," + height + " " + "0," + height;
-                // polygon
-                //     .attr("points", points );
+                polygon
+                    .attr("points", points );
 
-                // legendContainerHeight = d3.select("g.legendContainer").node().getBoundingClientRect().height;
+                legendContainerHeight = d3.select("g.legendContainer").node().getBoundingClientRect().height;
 
-                // legendContainer.attr("transform", "translate(0," + ((height-legendContainerHeight)/2) + ")");
+                legendContainer.attr("transform", "translate(0," + ((height-legendContainerHeight)/2) + ")");
 
-                // polygon.moveToFront();
-                // legendContainer.moveToFront();
+                polygon.moveToFront();
+                legendContainer.moveToFront();
                 tick();
             }
         }
-    </script>
-  </body>
-</html>
+        </script>
+</body>

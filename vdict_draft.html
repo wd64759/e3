@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>vdict demo</title>
+  <link rel="stylesheet" href="css/hack.css" ref="stylesheet">
+  <script src="js/lib/d3.js" type="text/javascript"></script>
+</head>
+<body>
+
+  <script type="text/javascript">
+
+    textLoader = function() {
+      d3.select("body").append("p").text("New paragraph ssss!");
+    }
+
+    dataLoader = function() {
+      // d3.json("xx.json", function(error, json)) ..
+      d3.csv("data/food.csv", function(error, data){
+        if (error) {
+          console.log('exception - ' + error);
+        } else {
+          console.log(data)
+        }
+      });
+    }
+
+    dataArrayLoaderAndStyle = function() {
+      var dataset = [5, 10, 15, 20, 25];
+
+      d3.select("body")
+      .selectAll("p")
+      .data(dataset)
+      .enter()
+      .append("p")
+      .text(function(d){
+        return d;
+      })
+      .style("color",function(d){
+        if (d>15) {
+          return "red";
+        } else {
+          return "blue";
+        }
+      });
+
+      // it can add attribute via .attr("id","123")
+      // even the class - .attr("class", "bar")
+
+      // another important way to add / remove class as below example
+      // .classed("className", true)
+      // .classed("className", false)
+
+    }
+
+    drawRectWithDiv = function() {
+      // var dataset = [ 25, 7, 5, 26, 11, 8, 25, 14, 23, 19, 14, 11, 22, 29, 11, 13, 12, 17, 18, 10, 24, 18, 25, 9, 3 ];
+
+      var dataset = [];
+
+      for(var i=0;i<50;i++) {
+        var d = Math.random() * 30;
+        dataset.push(d);
+      }
+
+      d3.select("body")
+      .selectAll("div")
+      .data(dataset)
+      .enter()
+      .append("div")
+      .attr("class","bar")
+      .style("height", function(d){
+        return d + "px";
+      });
+    }
+
+    drawColorCircle = function() {
+
+      // be careful of put svg tags under <svg> segment
+      var dataset = genRamdon(10, 50);
+
+      d3.select("body")
+      .append("svg")
+      .selectAll("circle")
+      .data(dataset)
+      .enter()
+      .append("circle")
+      .attr("cx", function(d, i) {
+        return i*50 + 25
+      }).attr("cy", function(d, i) {
+        return d*10/2;
+      }).attr("r", function(d, i) {
+        return d;
+      }).attr("fill", "yellow")
+      .attr("stroke", "black")
+      .text(function(d){
+        return d;
+      });
+    }
+
+    cleanCodeDraw = function() {
+
+      var dataset = genRamdon(10, 20);
+
+      var h = 50;
+      var w = 500;
+
+      var svg = d3.select("body").append("svg")
+      .attr("width", w)
+      .attr("height", h);
+
+      var circles = svg.selectAll("circle").data(dataset).enter().append("circle");
+      circles.attr("cx", function(d, i){
+        return i*50 + 25;
+      }).attr("cy", function(d, i) {
+        return d/2;
+      }).attr("r", function(d, i) {
+        return d;
+      }).attr("fill", "blue")
+      .attr("stroke", "red");
+
+    }
+
+    genRamdon = function(n, scale) {
+      var d_box = [];
+      for(var i=0; i< n; i++) {
+        d_box.push(Math.random() * scale);
+      }
+      return d_box;
+    }
+
+    cleanCodeDraw();
+
+  </script>
+</body>
+</html>

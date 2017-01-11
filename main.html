@@ -103,7 +103,7 @@
             var width = 0;
 
             // Linear size scale
-            var linearSize = d3.scale.linear().domain([0,1]).range([smallCircleSize, largeCircleSize]);
+            var linearSize = d3.scale.linear().domain([0,1]).range([1, 100]);
 
             // Initialize Ordinal Colour Scale
             var color = d3.scale.ordinal()
@@ -124,7 +124,7 @@
             var force = d3.layout.force();
 
         queue()
-            .defer(d3.tsv, "data/Program-Faculty-Lookup.txt")
+            .defer(d3.tsv, "data/lookup.tsv")
             .defer(d3.tsv, "data/e3.tsv")
             .await(ready);
 
@@ -137,7 +137,14 @@
             // Set up Program/Faculty lookup table
             var lookupTable = {};
             lookup.forEach(function(program) {
-                lookupTable[program.name] = program.faculty;
+                // console.log(">>*>>" + JSON.stringify(program))
+
+                lookupTable[program.name] = {
+                  'faculty':program.faculty,
+                  'weight':program.weight,
+                  'desc':program.desc
+                };
+                // console.log(">>>>" + JSON.stringify(lookupTable[program.name]))
             });
 
             var allShowing = true;
@@ -370,40 +377,18 @@
                   .attr("class", "link");
 
             // Create the node circles.
+            // nodes
+
             var node = vis.selectAll(".node")
                   .data(nodes)
                 .enter().append("circle")
                   .attr("class", "node")
                   .attr("r", function(d) {
-                      if(d.name == "NURSING" ||
-                         d.name == "ENGINEERING 1" ||
-                         d.name == "ENGINEERING 1 CO-OP" ||
-                         d.name == "ENVIRONMENTAL & EARTH SCIENCES 1" ||
-                         d.name == "HUMANITIES 1" ||
-                         d.name == "SOCIAL SCIENCES 1" ||
-                         d.name == "INTEGRATED SCIENCE 1" ||
-                         d.name == "ARTS & SCIENCE 1" ||
-                         d.name == "COMPUTER SCIENCE 1" ||
-                         d.name == "COMPUTER SCIENCE 1 CO-OP" ||
-                         d.name == "BUSINESS 1" ||
-                         d.name == "BUSINESS" ||
-                         d.name == "LIFE SCIENCES 1" ||
-                         d.name == "MATHEMATICS & STATISTICS 1" ||
-                         d.name == "MEDICAL RADIATION SCIENCES" ||
-                         d.name == "MUSIC 1" ||
-                         d.name == "PHYSICAL SCIENCES 1" ||
-                         d.name == "STUDIO ART I" ||
-                         d.name == "TECHNOLOGY 1" ||
-                         d.name == "HONOURS BACHELOR OF HEALTH SCIENCES" ||
-                         d.name == "HONOURS KINESIOLOGY 1" ||
-                         d.name == "MIDWIFERY" ||
-                         d.name == "MEDICINE"
-                        ){
-                          return largeCircleSize;
-                      }
-                      else{return smallCircleSize}
+                    console.log("----" + JSON.stringify(lookupTable[d.name]));
+                      return lookupTable[d.name].weight;
+                      // return 20;
                   })
-                  .style("fill", function(d) {return color(lookupTable[d.name]);})
+                  .style("fill", function(d) {return color(lookupTable[d.name].faculty);})
                   .classed("activeNode", true)
                   .on("mouseover", function(d){
                       if(d3.select(this).classed("activeNode") && !d3.select(this).classed("baseNode")){
@@ -411,7 +396,7 @@
                           tooltip.transition()
                         .duration(200)
                         .style("opacity", 0.9);
-                          tooltip.html(d.name)
+                          tooltip.html(lookupTable[d.name].desc)
                         .style("right", "20px")
                         .style("top", (nodeHighlighted?"65px":"20px"));
                       }
@@ -502,11 +487,11 @@
                 nodeHighlighted = false;
                 var searchNode = d3.selectAll(".node");
                 var notSelectedNodes = searchNode.filter(function (d, i){
-                    return lookupTable[d.name] != searchVal
+                    return lookupTable[d.name].faculty != searchVal
                 });
 
                 var selectedNodes = searchNode.filter(function (d, i){
-                    return lookupTable[d.name] == searchVal
+                    return lookupTable[d.name].faculty == searchVal
                 });
 
                 if(searchVal == 1 || searchVal == 0){ // Entry-level program filter

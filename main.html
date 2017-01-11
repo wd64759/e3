@@ -17,17 +17,19 @@
             <div class="control-group">
               <label for="lcfCodes">Object Category</label>
               <select id="ember241" class="ember-view ember-select">
-              <option value="store procedures">store procedures</option>
-              <option value="tables">tables</option>
-              <option value="views">views</option>
+              <option value="all">All</option>
+              <option value="sp">store procedures</option>
+              <option value="tbl">tables</option>
+              <option value="view">views</option>
               <option value="restrictions">restrictions</option>
               </select>
             </div>
 
             <div class="control-group">
               <div class="control-group" data-bindattr-1="1">
-                <label for="lcfCode">Key Word Search
-                <button class="btn btn-mini btn-primary" style="float:right;">Find</button>
+                <label for="lcfCode">Key Word Search&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <button id="findBtn" class="btn btn-mini btn-primary">Find</button>
+                <button id="resetBtn" class="btn btn-mini btn-primary" style="float:right;">Reset</button>
                 <strong style="display:none;clear:both;width: 220px;"></strong>
                 </label>
                 <textarea id="ember790" class="ember-view ember-text-area steppable" rows="5"></textarea>
@@ -107,7 +109,7 @@
 
             // Initialize Ordinal Colour Scale
             var color = d3.scale.ordinal()
-                .domain(["02", "03", "04", "06", "07", "14", "15", "21", "23"])
+                .domain(["10", "20", "30", "40", "50", "60", "70", "80", "100"])
                 .range([
                     "#009933", // Science
                     "#ff0000", // Engineering
@@ -124,11 +126,31 @@
             var force = d3.layout.force();
 
         queue()
-            .defer(d3.tsv, "data/lookup.tsv")
-            .defer(d3.tsv, "data/e3.tsv")
+            .defer(d3.csv, "data/lookup.tsv")
+            .defer(d3.csv, "data/e3.tsv")
             .await(ready);
 
         function ready(error, lookup, links){
+
+            var searchMap = {'rs':[{'cusp':'1'},{'matD':'2'}]};
+
+            d3.selectAll("#findBtn")
+                .on("click", function() {
+                  var sId = $("#ember790").val();
+                  // console.log('>>>>>> sId:' + sId);
+                  searchNode(sId,'id');
+                });
+
+            d3.selectAll("#resetBtn").on("click", function(){
+              showAllNodes();
+            })
+
+            $("#ember241").change(function(){
+              var sType = this.value;
+              searchNode(sType, 'type');
+            })
+
+
             if (error) throw error;
 
             // The 'lookup' variable refers to data from the Program-Faculty-Lookup.txt file
@@ -137,15 +159,19 @@
             // Set up Program/Faculty lookup table
             var lookupTable = {};
             lookup.forEach(function(program) {
-                // console.log(">>*>>" + JSON.stringify(program))
+                console.log(">>*>>" + JSON.stringify(program))
 
-                lookupTable[program.name] = {
-                  'faculty':program.faculty,
+                lookupTable[program.nid] = {
                   'weight':program.weight,
-                  'desc':program.desc
+                  'name':program.name,
+                  'nid':program.nid,
+                  'ntype':program.ntype,
+                  'faculty':program.faculty
                 };
                 // console.log(">>>>" + JSON.stringify(lookupTable[program.name]))
             });
+
+            console.log('>>> lookup :' + JSON.stringify(lookupTable));
 
             var allShowing = true;
             var facultySelected = false;
@@ -224,7 +250,6 @@
             }
 
 
-
             //Initialize SVG
             var graph = d3.select("body div#chart").append("svg")
               .append("g")
@@ -257,6 +282,7 @@
                 .style("cursor", "move")
                 .on("click", function(){
                     if (d3.event.defaultPrevented) return;
+                    console.log('>>>>>>>>>>>>>>>.11')
                     showAllNodes();
                 });
 
@@ -344,6 +370,7 @@
             // Filtering by faculty or entry-level program
             d3.selectAll("g.cell")
                 .on("click", function(d){
+                    console.log('>>>>>>>>>>>>>>>>> 11.2222');
                     if (d3.event.defaultPrevented) return;
                     var self = this;
                     var activeLegends = d3.selectAll("g.cell");
@@ -378,12 +405,15 @@
 
             // Create the node circles.
             // nodes
+            console.log('>>> nodes:' + JSON.stringify(nodes));
 
             var node = vis.selectAll(".node")
                   .data(nodes)
                 .enter().append("circle")
                   .attr("class", "node")
                   .attr("r", function(d) {
+                    console.log("---->" + JSON.stringify(d));
+
                     console.log("----" + JSON.stringify(lookupTable[d.name]));
                       return lookupTable[d.name].weight;
                       // return 20;
@@ -396,7 +426,7 @@
                           tooltip.transition()
                         .duration(200)
                         .style("opacity", 0.9);
-                          tooltip.html(lookupTable[d.name].desc)
+                          tooltip.html(lookupTable[d.name].name)
                         .style("right", "20px")
                         .style("top", (nodeHighlighted?"65px":"20px"));
                       }
@@ -448,6 +478,8 @@
 
             // Change opacity to highlight connected nodes
             function connectedNodes(clickedOn, firstClick, nodeClicked) {
+
+                console.log('>>>>>>>>>>>>> 2222.4444444');
                 nodeHighlighted = true;
                 d3.selectAll("g.cell").classed("active", false); // Clear faculty/entry filters
                 if (d3.select(nodeClicked).classed("baseNode")){ // Base node was clicked, show all
@@ -483,21 +515,48 @@
                 facultySelected = false;
             }
 
-            function searchNode(searchVal, gObject) {
+            function searchNode(searchVal, sType) {
                 nodeHighlighted = false;
                 var searchNode = d3.selectAll(".node");
-                var notSelectedNodes = searchNode.filter(function (d, i){
-                    return lookupTable[d.name].faculty != searchVal
-                });
 
-                var selectedNodes = searchNode.filter(function (d, i){
-                    return lookupTable[d.name].faculty == searchVal
-                });
+                console.log("lookupTable>>" + JSON.stringify(lookupTable));
 
-                if(searchVal == 1 || searchVal == 0){ // Entry-level program filter
+                var notSelectedNodes = [];
+                var selectedNodes = [];
+
+                if(sType == 'id') {
+
+                  notSelectedNodes = searchNode.filter(function (d, i){
+                    return lookupTable[d.name].nid != searchVal;
+                  });
+
+                  console.log(">>notSelectedNodes:" + JSON.stringify(notSelectedNodes));
+
+                  selectedNodes = searchNode.filter(function (d, i){
+                    return lookupTable[d.name].nid == searchVal;
+                  });
+                } else {
+                  notSelectedNodes = searchNode.filter(function (d, i){
+                    return lookupTable[d.name].ntype != searchVal;
+                  });
+
+                  console.log(">>notSelectedNodes:" + JSON.stringify(notSelectedNodes));
+
+                  selectedNodes = searchNode.filter(function (d, i){
+                    return lookupTable[d.name].ntype == searchVal;
+                  });
+                }
+
+
+                console.log(">>selectedNodes:" + JSON.stringify(selectedNodes));
+
+                if(searchVal == -1 || searchVal == -2){ // Entry-level program filter
                     var entryLevel;
                     var other;
                     entryLevel = searchNode.filter(function(d){
+
+                       console.log("***>>" + JSON.stringify(d));
+
                        return d.name == "NURSING" ||
                              d.name == "ENGINEERING 1" ||
                              d.name == "ENGINEERING 1 CO-OP" ||
@@ -550,7 +609,7 @@
                     searchVal == 1? (selectedNodes = entryLevel, notSelectedNodes = other) : (selectedNodes = other, notSelectedNodes = entryLevel);
                 }
                 var link = d3.selectAll(".link");
-                if (!d3.select(gObject).classed("active")){
+                // if (!d3.select(gObject).classed("active")){
 //                    var xAvg = 0, yAvg = 0;
 //                    selectedNodes.each(function(d){
 //                        xAvg += d.x;
@@ -576,15 +635,15 @@
                         .classed("activeNode", false);
 
                     link.style("stroke-opacity", 0.1);
-                    d3.select(gObject).classed("active", true);
+                    // d3.select(gObject).classed("active", true);
                     facultySelected = true;
                     allShowing = false;
-                }
-                else {
-                    d3.select(gObject).classed("active", false);
-                    showAllNodes();
+                // }
+                // else {
+                //     d3.select(gObject).classed("active", false);
+                //     showAllNodes();
 
-                }
+                // }
             }
 
             // Show all nodes on click in empty space

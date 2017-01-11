@@ -154,7 +154,7 @@
 
         queue()
             .defer(d3.tsv, "data/Program-Faculty-Lookup.txt")
-            .defer(d3.tsv, "data/e3.tsv")
+            .defer(d3.tsv, "data/e3.csv.bak")
             .await(ready);
 
         function ready(error, lookup, links){
@@ -278,6 +278,7 @@
                 .style("pointer-events", "all")
                 .style("cursor", "move")
                 .on("click", function(){
+                    console.log('>>>>>>>>>>>>> 1111.4444444');
                     if (d3.event.defaultPrevented) return;
                     showAllNodes();
                 });
@@ -366,10 +367,12 @@
             // Filtering by faculty or entry-level program
             d3.selectAll("g.cell")
                 .on("click", function(d){
+                    console.log('>>>>>>>>>>>>> 2222.4444444' + JSON.stringify(d));
                     if (d3.event.defaultPrevented) return;
                     var self = this;
                     var activeLegends = d3.selectAll("g.cell");
 
+                    console.log('>>>>>>>>>>>>> 2222.5555555' + JSON.stringify(self));
                     activeLegends.filter(function (x) {return self != this;})
                         .classed("active", false); // Set all other faculty filters to false
 
@@ -492,6 +495,7 @@
 
             // Change opacity to highlight connected nodes
             function connectedNodes(clickedOn, firstClick, nodeClicked) {
+                console.log('>>>>>>>>>>>>> 555555555.4444444');
                 nodeHighlighted = true;
                 d3.selectAll("g.cell").classed("active", false); // Clear faculty/entry filters
                 if (d3.select(nodeClicked).classed("baseNode")){ // Base node was clicked, show all
@@ -530,6 +534,9 @@
             function searchNode(searchVal, gObject) {
                 nodeHighlighted = false;
                 var searchNode = d3.selectAll(".node");
+                console.log('>>> searchVal:' + searchVal);
+                console.log('>>> gObject:' + JSON.stringify(gObject));
+
                 var notSelectedNodes = searchNode.filter(function (d, i){
                     return lookupTable[d.name] != searchVal
                 });
@@ -542,6 +549,9 @@
                     var entryLevel;
                     var other;
                     entryLevel = searchNode.filter(function(d){
+
+                        console.log("***>>" + JSON.stringify(d));
+
                        return d.name == "NURSING" ||
                              d.name == "ENGINEERING 1" ||
                              d.name == "ENGINEERING 1 CO-OP" ||
@@ -633,6 +643,7 @@
 
             // Show all nodes on click in empty space
             function showAllNodes(){
+                console.log('>>>>>>>>>>>>> 33333.4444444');
                 if(d3.event.stopPropagation){d3.event.stopPropagation();}
                 force.resume();
                 //Put them back to opacity=1

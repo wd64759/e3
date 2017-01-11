@@ -36,19 +36,6 @@
               </div>
             </div>
 
-            <div class="control-group">
-              <label for="animationSpeed">Construction Speed</label>
-              <select id="ember816" class="ember-view ember-select">
-                <option id="ember872" class="ember-view" value="100">Slow</option>
-              </select>
-            </div>
-
-            <div class="control-group">
-              <button class="btn btn-block btn-primary" data-ember-action="4">
-                <i class="icon-repeat icon-white"></i>
-                Reload
-              </button>
-            </div>
           </div>
         </div>
 
@@ -105,7 +92,8 @@
             var width = 0;
 
             // Linear size scale
-            var linearSize = d3.scale.linear().domain([0,1]).range([1, 100]);
+            var linearSize = d3.scale.linear()
+            .domain([10,100000000]).range([5, 20]);
 
             // Initialize Ordinal Colour Scale
             var color = d3.scale.ordinal()
@@ -126,8 +114,8 @@
             var force = d3.layout.force();
 
         queue()
-            .defer(d3.csv, "data/lookup.tsv")
-            .defer(d3.csv, "data/e3.tsv")
+            .defer(d3.csv, "data/newbook.csv")
+            .defer(d3.csv, "data/newbook_rel.csv")
             .await(ready);
 
         function ready(error, lookup, links){
@@ -159,7 +147,7 @@
             // Set up Program/Faculty lookup table
             var lookupTable = {};
             lookup.forEach(function(program) {
-                console.log(">>*>>" + JSON.stringify(program))
+                // console.log(">>*>>" + JSON.stringify(program))
 
                 lookupTable[program.nid] = {
                   'weight':program.weight,
@@ -170,6 +158,8 @@
                 };
                 // console.log(">>>>" + JSON.stringify(lookupTable[program.name]))
             });
+
+            window.mlookupTable = lookupTable;
 
             console.log('>>> lookup :' + JSON.stringify(lookupTable));
 
@@ -406,6 +396,7 @@
             // Create the node circles.
             // nodes
             console.log('>>> nodes:' + JSON.stringify(nodes));
+            var default_weight = 1000;
 
             var node = vis.selectAll(".node")
                   .data(nodes)
@@ -413,20 +404,33 @@
                   .attr("class", "node")
                   .attr("r", function(d) {
                     console.log("---->" + JSON.stringify(d));
-
                     console.log("----" + JSON.stringify(lookupTable[d.name]));
-                      return lookupTable[d.name].weight;
+                    if(lookupTable[d.name] && lookupTable[d.name].weight)
+                      return linearSize(lookupTable[d.name].weight);
+                    else
+                      return linearSize(default_weight);
                       // return 20;
                   })
-                  .style("fill", function(d) {return color(lookupTable[d.name].faculty);})
+                  .style("fill", function(d) {
+                    if(lookupTable[d.name]){
+                      return color(lookupTable[d.name].faculty);
+                    } else {
+                      return color(10);
+                    }
+
+                  })
                   .classed("activeNode", true)
                   .on("mouseover", function(d){
+                      var tipName = 'unknown';
+                      if(lookupTable[d.name]){
+                        tipName = lookupTable[d.name].name;
+                      }
                       if(d3.select(this).classed("activeNode") && !d3.select(this).classed("baseNode")){
                           force.stop();
                           tooltip.transition()
                         .duration(200)
                         .style("opacity", 0.9);
-                          tooltip.html(lookupTable[d.name].name)
+                          tooltip.html(tipName)
                         .style("right", "20px")
                         .style("top", (nodeHighlighted?"65px":"20px"));
                       }
